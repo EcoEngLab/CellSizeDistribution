@@ -17,7 +17,7 @@ missing_volume = df[df['GeoMeanVolume'].isnull() | (df['GeoMeanVolume'].astype(s
 # Get the species names as a list
 species_missing = missing_volume['Species'].dropna().astype(str).tolist()
 
-# Print the species names
+# Print the species name
 print("Species with missing GeoMeanVolume:")
 for species in species_missing:
     print(species)
