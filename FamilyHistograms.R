@@ -8,12 +8,15 @@ library(readr)
 getwd()
 setwd("C:/Users/catbb/OneDrive/Desktop/bacdive-client")
 
-# Configuration
-input_dir <- "family_level_output"
-output_dir <- "plots_output"
+# Configuration for both domains - Family Level
+bacteria_input_dir <- "family_level_output_bacteria"
+archaea_input_dir <- "family_level_output_archaea"
+bacteria_output_dir <- "plots_output_bacteria_family"
+archaea_output_dir <- "plots_output_archaea_family"
 
 # Create output directories
-dir.create(output_dir, showWarnings = FALSE)
+dir.create(bacteria_output_dir, showWarnings = FALSE)
+dir.create(archaea_output_dir, showWarnings = FALSE)
 
 # Function to calculate cell size coverage percentage
 calculate_coverage <- function(data) {
@@ -24,7 +27,7 @@ calculate_coverage <- function(data) {
 }
 
 # Function to create histogram
-create_histogram <- function(data, study_id, file_name) {
+create_histogram <- function(data, study_id, file_name, domain) {
   # Filter for matched families only
   matched_data <- data %>% 
     filter(!is.na(GeoMeanVolume_family_median))
@@ -37,7 +40,7 @@ create_histogram <- function(data, study_id, file_name) {
   p <- ggplot(matched_data, aes(x = log10(GeoMeanVolume_family_median))) +
     geom_histogram(bins = 20, fill = "steelblue", alpha = 0.7, color = "black") +
     labs(
-      title = paste(file_name, study_id),
+      title = paste(file_name, study_id, "(", domain, ")", "- Family Level"),
       x = "Log10(Geometric Mean Volume)",
       y = "Number of Families"
     ) +
@@ -52,7 +55,7 @@ create_histogram <- function(data, study_id, file_name) {
 }
 
 # Function to create scatter plot
-create_scatter_plot <- function(data, study_id, file_name) {
+create_scatter_plot <- function(data, study_id, file_name, domain) {
   # Filter for matched families only and clean data
   matched_data <- data %>% 
     filter(!is.na(GeoMeanVolume_family_median),
@@ -92,7 +95,7 @@ create_scatter_plot <- function(data, study_id, file_name) {
       geom_point(alpha = 0.6, size = 2) +
       geom_smooth(method = "lm", se = TRUE, color = "red") +
       labs(
-        title = paste(file_name, study_id),
+        title = paste(file_name, study_id, "(", domain, ")", "- Family Level"),
         subtitle = paste("Slope:", round(slope, 3), "| R²:", round(r_squared, 3)),
         x = "Log10(Geometric Mean Volume)",
         y = "Log10(Relative Abundance)"
@@ -112,8 +115,8 @@ create_scatter_plot <- function(data, study_id, file_name) {
   })
 }
 
-# Function to process a single file
-process_file <- function(file_path) {
+# Function to process a single file for a specific domain
+process_file <- function(file_path, output_dir, domain) {
   # Read the CSV file with better error handling
   data <- read_csv(file_path, show_col_types = FALSE, na = c("", "NA", "NaN", "Inf", "-Inf"))
   
@@ -161,7 +164,7 @@ process_file <- function(file_path) {
     clean_study_id <- gsub("[^A-Za-z0-9]", "_", study_id)
     
     # Create histogram
-    hist_plot <- create_histogram(study_data, study_id, file_name)
+    hist_plot <- create_histogram(study_data, study_id, file_name, domain)
     if(!is.null(hist_plot)) {
       hist_filename <- paste0(file_name, "_", clean_study_id, "_histogram.png")
       hist_path <- file.path(output_dir, hist_filename)
@@ -170,7 +173,7 @@ process_file <- function(file_path) {
     }
     
     # Create scatter plot
-    scatter_plot <- create_scatter_plot(study_data, study_id, file_name)
+    scatter_plot <- create_scatter_plot(study_data, study_id, file_name, domain)
     if(!is.null(scatter_plot)) {
       scatter_filename <- paste0(file_name, "_", clean_study_id, "_scatter.png")
       scatter_path <- file.path(output_dir, scatter_filename)
@@ -182,167 +185,191 @@ process_file <- function(file_path) {
   return(file_coverage_info)
 }
 
-# Main execution
-cat("Starting plot generation...\n")
-
-# Get all CSV files from input directory
-csv_files <- list.files(path = input_dir, pattern = "\\.csv$", full.names = TRUE)
-
-if(length(csv_files) == 0) {
-  cat("No CSV files found in", input_dir, "\n")
-} else {
-  cat("Found", length(csv_files), "CSV files to process\n")
+# Function to process all files for a domain
+process_domain <- function(input_dir, output_dir, domain) {
+  cat(paste("Starting plot generation for", domain, "...\n"))
   
-  # Process each file
-  all_coverage_info <- list()
+  # Get all CSV files from input directory
+  csv_files <- list.files(path = input_dir, pattern = "\\.csv$", full.names = TRUE)
   
-  for(file_path in csv_files) {
-    cat("\nProcessing:", basename(file_path), "\n")
-    coverage_info <- process_file(file_path)
-    if(!is.null(coverage_info)) {
-      all_coverage_info[[basename(file_path)]] <- coverage_info
+  if(length(csv_files) == 0) {
+    cat("No CSV files found in", input_dir, "\n")
+    return(NULL)
+  } else {
+    cat("Found", length(csv_files), "CSV files to process for", domain, "\n")
+    
+    # Process each file
+    all_coverage_info <- list()
+    
+    for(file_path in csv_files) {
+      cat("\nProcessing:", basename(file_path), "for", domain, "\n")
+      coverage_info <- process_file(file_path, output_dir, domain)
+      if(!is.null(coverage_info)) {
+        all_coverage_info[[basename(file_path)]] <- coverage_info
+      }
     }
-  }
-  
-  # Save coverage summary
-  coverage_summary <- do.call(rbind, lapply(names(all_coverage_info), function(file_name) {
-    file_info <- all_coverage_info[[file_name]]
-    # Read the file again to get per-study stats
-    data <- read_csv(file.path(input_dir, file_name), show_col_types = FALSE, na = c("", "NA", "NaN", "Inf", "-Inf"))
-    studies <- names(file_info)
-    do.call(rbind, lapply(studies, function(study_id) {
-      study_data <- data[data$study_accession == study_id, ]
-      # Filter for families with non-NA GeoMeanVolume_family_median
-      filtered <- study_data[!is.na(study_data$GeoMeanVolume_family_median), ]
-      n_families_filtered <- length(unique(filtered$family))
-      data.frame(
-        file = file_name,
-        study = study_id,
-        coverage_percentage = file_info[[study_id]],
-        n_families_filtered = n_families_filtered,
-        stringsAsFactors = FALSE
-      )
+    
+    # Save coverage summary
+    coverage_summary <- do.call(rbind, lapply(names(all_coverage_info), function(file_name) {
+      file_info <- all_coverage_info[[file_name]]
+      # Read the file again to get per-study stats
+      data <- read_csv(file.path(input_dir, file_name), show_col_types = FALSE, na = c("", "NA", "NaN", "Inf", "-Inf"))
+      studies <- names(file_info)
+      do.call(rbind, lapply(studies, function(study_id) {
+        study_data <- data[data$study_accession == study_id, ]
+        # Filter for families with non-NA GeoMeanVolume_family_median
+        filtered <- study_data[!is.na(study_data$GeoMeanVolume_family_median), ]
+        n_families_filtered <- length(unique(filtered$family))
+        data.frame(
+          file = file_name,
+          study = study_id,
+          coverage_percentage = file_info[[study_id]],
+          n_families_filtered = n_families_filtered,
+          domain = domain,
+          stringsAsFactors = FALSE
+        )
+      }))
     }))
-  }))
-
-write_csv(coverage_summary, file.path(output_dir, "coverage_summary.csv"))
-
-# Define coverage bins and output folders
-coverage_bins <- list(
-  "coverage_0_20" = c(0, 20),
-  "coverage_20_40" = c(20, 40),
-  "coverage_40_60" = c(40, 60),
-  "coverage_60_80" = c(60, 80),
-  "coverage_80_100" = c(80, 100.0001) # 100 inclusive
-)
-
-# Create folders if they don't exist
-for (folder in names(coverage_bins)) {
-  dir.create(file.path(output_dir, folder), showWarnings = FALSE)
-}
-
-# Copy plots to appropriate folders based on coverage
-for (i in seq_len(nrow(coverage_summary))) {
-  cov <- coverage_summary$coverage_percentage[i]
-  file_base <- tools::file_path_sans_ext(coverage_summary$file[i])
-  study <- coverage_summary$study[i]
-  clean_study_id <- gsub("[^A-Za-z0-9]", "_", study)
-  
-  # Find which bin this coverage falls into (upper bound exclusive except last bin)
-  for (j in seq_along(coverage_bins)) {
-    folder <- names(coverage_bins)[j]
-    bin <- coverage_bins[[j]]
-    is_last_bin <- (j == length(coverage_bins))
-    if ((cov >= bin[1] && cov < bin[2]) || (is_last_bin && cov == 100)) {
-      # Histogram and scatter plot filenames
-      hist_file <- paste0(file_base, "_", clean_study_id, "_histogram.png")
-      scatter_file <- paste0(file_base, "_", clean_study_id, "_scatter.png")
-      # Copy if file exists
-      if (file.exists(file.path(output_dir, hist_file))) {
-        file.copy(
-          file.path(output_dir, hist_file),
-          file.path(output_dir, folder, hist_file),
-          overwrite = TRUE
-        )
-      }
-      if (file.exists(file.path(output_dir, scatter_file))) {
-        file.copy(
-          file.path(output_dir, scatter_file),
-          file.path(output_dir, folder, scatter_file),
-          overwrite = TRUE
-        )
-      }
-      break # Only copy to one folder
+    
+    write_csv(coverage_summary, file.path(output_dir, paste0("coverage_summary_", tolower(domain), ".csv")))
+    
+    # Define coverage bins and output folders
+    coverage_bins <- list(
+      "coverage_0_20" = c(0, 20),
+      "coverage_20_40" = c(20, 40),
+      "coverage_40_60" = c(40, 60),
+      "coverage_60_80" = c(60, 80),
+      "coverage_80_100" = c(80, 100.0001) # 100 inclusive
+    )
+    
+    # Create folders if they don't exist
+    for (folder in names(coverage_bins)) {
+      dir.create(file.path(output_dir, folder), showWarnings = FALSE)
     }
+    
+    # Copy plots to appropriate folders based on coverage
+    for (i in seq_len(nrow(coverage_summary))) {
+      cov <- coverage_summary$coverage_percentage[i]
+      file_base <- tools::file_path_sans_ext(coverage_summary$file[i])
+      study <- coverage_summary$study[i]
+      clean_study_id <- gsub("[^A-Za-z0-9]", "_", study)
+      
+      # Find which bin this coverage falls into (upper bound exclusive except last bin)
+      for (j in seq_along(coverage_bins)) {
+        folder <- names(coverage_bins)[j]
+        bin <- coverage_bins[[j]]
+        is_last_bin <- (j == length(coverage_bins))
+        if ((cov >= bin[1] && cov < bin[2]) || (is_last_bin && cov == 100)) {
+          # Histogram and scatter plot filenames
+          hist_file <- paste0(file_base, "_", clean_study_id, "_histogram.png")
+          scatter_file <- paste0(file_base, "_", clean_study_id, "_scatter.png")
+          # Copy if file exists
+          if (file.exists(file.path(output_dir, hist_file))) {
+            file.copy(
+              file.path(output_dir, hist_file),
+              file.path(output_dir, folder, hist_file),
+              overwrite = TRUE
+            )
+          }
+          if (file.exists(file.path(output_dir, scatter_file))) {
+            file.copy(
+              file.path(output_dir, scatter_file),
+              file.path(output_dir, folder, scatter_file),
+              overwrite = TRUE
+            )
+          }
+          break # Only copy to one folder
+        }
+      }
+    }
+    
+    return(coverage_summary)
   }
 }
-}
 
-# Load required libraries
+# Main execution - process both domains
+bacteria_coverage <- process_domain(bacteria_input_dir, bacteria_output_dir, "Bacteria")
+archaea_coverage <- process_domain(archaea_input_dir, archaea_output_dir, "Archaea")
+
+# Load required libraries for creating arrays
 library(png)
 library(grid)
 library(patchwork)
-library(dplyr)
-library(readr)
 
-output_dir <- "plots_output"
-coverage_folders <- c("coverage_0_20", "coverage_20_40", "coverage_40_60", "coverage_60_80", "coverage_80_100")
-
-# Read the coverage summary
-coverage_summary <- read_csv(file.path(output_dir, "coverage_summary.csv"), show_col_types = FALSE)
-
-for (folder in coverage_folders) {
-  folder_path <- file.path(output_dir, folder)
+# Function to create arrays for a domain
+create_domain_arrays <- function(output_dir, domain) {
+  coverage_folders <- c("coverage_0_20", "coverage_20_40", "coverage_40_60", "coverage_60_80", "coverage_80_100")
   
-  # Get the relevant rows for this coverage bin
-  bin_range <- as.numeric(unlist(regmatches(folder, gregexpr("[0-9]+", folder))))
-  lower <- bin_range[1]
-  upper <- bin_range[2]
-  is_last_bin <- folder == "coverage_80_100"
-  
-  # Filter coverage_summary for this bin
-  if (is_last_bin) {
-    bin_summary <- coverage_summary %>%
-      filter(coverage_percentage >= lower & coverage_percentage <= upper)
-  } else {
-    bin_summary <- coverage_summary %>%
-      filter(coverage_percentage >= lower & coverage_percentage < upper)
+  # Read the coverage summary
+  coverage_summary_file <- file.path(output_dir, paste0("coverage_summary_", tolower(domain), ".csv"))
+  if(!file.exists(coverage_summary_file)) {
+    cat("No coverage summary file found for", domain, "\n")
+    return()
   }
   
-  # Pick top 6 by n_families_filtered
-  top6 <- bin_summary %>%
-    arrange(desc(n_families_filtered)) %>%
-    head(6)
+  coverage_summary <- read_csv(coverage_summary_file, show_col_types = FALSE)
   
-  if (nrow(top6) == 0) next
-  
-  # Get the corresponding scatter plot file names
-  plot_files <- mapply(function(file, study) {
-    file_base <- tools::file_path_sans_ext(file)
-    clean_study_id <- gsub("[^A-Za-z0-9]", "_", study)
-    file.path(folder_path, paste0(file_base, "_", clean_study_id, "_scatter.png"))
-  }, top6$file, top6$study, SIMPLIFY = TRUE)
-  
-  # Read the images as grobs
-  plots <- lapply(plot_files, function(f) {
-    if (file.exists(f)) {
-      img <- png::readPNG(f)
-      grid::rasterGrob(img, interpolate = TRUE)
+  for (folder in coverage_folders) {
+    folder_path <- file.path(output_dir, folder)
+    
+    # Get the relevant rows for this coverage bin
+    bin_range <- as.numeric(unlist(regmatches(folder, gregexpr("[0-9]+", folder))))
+    lower <- bin_range[1]
+    upper <- bin_range[2]
+    is_last_bin <- folder == "coverage_80_100"
+    
+    # Filter coverage_summary for this bin
+    if (is_last_bin) {
+      bin_summary <- coverage_summary %>%
+        filter(coverage_percentage >= lower & coverage_percentage <= upper)
     } else {
-      NULL
+      bin_summary <- coverage_summary %>%
+        filter(coverage_percentage >= lower & coverage_percentage < upper)
     }
-  })
-  plots <- Filter(Negate(is.null), plots)
-  
-  # Combine into a 2x3 grid
-  if (length(plots) > 0) {
-    combined_plot <- wrap_plots(plots, ncol = 3, nrow = 2)
-    # Save the combined plot
-    ggsave(
-      filename = file.path(folder_path, paste0("top6_scatter_array_", folder, ".png")),
-      plot = combined_plot,
-      width = 18, height = 8, dpi = 300
-    )
-    print(paste("Saved array for", folder))
+    
+    # Pick top 6 by n_families_filtered
+    top6 <- bin_summary %>%
+      arrange(desc(n_families_filtered)) %>%
+      head(6)
+    
+    if (nrow(top6) == 0) next
+    
+    # Get the corresponding scatter plot file names
+    plot_files <- mapply(function(file, study) {
+      file_base <- tools::file_path_sans_ext(file)
+      clean_study_id <- gsub("[^A-Za-z0-9]", "_", study)
+      file.path(folder_path, paste0(file_base, "_", clean_study_id, "_scatter.png"))
+    }, top6$file, top6$study, SIMPLIFY = TRUE)
+    
+    # Read the images as grobs
+    plots <- lapply(plot_files, function(f) {
+      if (file.exists(f)) {
+        img <- png::readPNG(f)
+        grid::rasterGrob(img, interpolate = TRUE)
+      } else {
+        NULL
+      }
+    })
+    plots <- Filter(Negate(is.null), plots)
+    
+    # Combine into a 2x3 grid
+    if (length(plots) > 0) {
+      combined_plot <- wrap_plots(plots, ncol = 3, nrow = 2)
+      # Save the combined plot
+      ggsave(
+        filename = file.path(folder_path, paste0("top6_scatter_array_", folder, "_", tolower(domain), "_family.png")),
+        plot = combined_plot,
+        width = 18, height = 8, dpi = 300
+      )
+      print(paste("Saved array for", folder, domain, "Family Level"))
+    }
   }
 }
+
+# Create arrays for both domains
+create_domain_arrays(bacteria_output_dir, "Bacteria")
+create_domain_arrays(archaea_output_dir, "Archaea")
+
+cat("\nProcessing complete!\n")
+cat("Bacteria family-level plots saved to:", bacteria_output_dir, "\n")
+cat("Archaea family-level plots saved to:", archaea_output_dir, "\n")
