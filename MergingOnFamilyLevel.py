@@ -13,297 +13,164 @@ import numpy as np
 import os
 import glob
 from pathlib import Path
+import re
 
-# Configuration
-pooled_input_dir = "pooled_output"
-bacteria_cell_size_file = "VolumeOutputBacteria.csv"
-archaea_cell_size_file = "VolumeOutputArchaea.csv"
-bacteria_output_dir = "family_level_output_bacteria"
-archaea_output_dir = "family_level_output_archaea"
+# --- CONFIGURATION ---
+input_dir = "qiime_taxon_tables_split (1)"  # Directory with host species files
+cell_size_file = "VolumeOutputBacteria.csv"  # Family-level cell size data
+output_dir = "nopool_family_level_output_bacteria"
+os.makedirs(output_dir, exist_ok=True)
 
-# Create output directories if they don't exist
-Path(bacteria_output_dir).mkdir(exist_ok=True)
-Path(archaea_output_dir).mkdir(exist_ok=True)
+# Read cell size data and prepare family-level medians
+cell_size_df = pd.read_csv(cell_size_file)
+taxonomy_cols = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Phylum', 'Domain']
+cell_size_df[taxonomy_cols] = cell_size_df[taxonomy_cols].replace('NA', pd.NA)
+cell_size_cols = ['LengthMin', 'LengthMax', 'WidthMin', 'WidthMax', 
+                  'VolumeMin', 'VolumeMax', 'AvgVolume', 'GeoMeanVolume', 'SurfaceArea']
+for col in cell_size_cols:
+    cell_size_df[col] = pd.to_numeric(cell_size_df[col], errors='coerce')
+family_stats = cell_size_df.groupby('Family').agg({
+    'LengthMin': 'median',
+    'LengthMax': 'median',
+    'WidthMin': 'median',
+    'WidthMax': 'median',
+    'VolumeMin': 'median',
+    'VolumeMax': 'median',
+    'AvgVolume': 'median',
+    'GeoMeanVolume': 'median',
+    'SurfaceArea': 'median',
+    'Cell shape': lambda x: x.mode()[0] if not x.mode().empty else pd.NA
+}).reset_index()
+family_stats = family_stats.rename(columns={col: f"{col}_family_median" for col in family_stats.columns if col != "Family"})
 
-def process_domain(cell_size_file, output_dir, domain_name):
-    """
-    Process data for a specific domain (Bacteria or Archaea)
-    """
-    print(f"Processing {domain_name} data...")
-    
-    # Load cell size data and calculate median values by family
-    try:
-        domain_df = pd.read_csv(cell_size_file)
-        
-        # Clean up 'NA' values
-        taxonomy_cols = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Phylum', 'Domain']
-        domain_df[taxonomy_cols] = domain_df[taxonomy_cols].replace('NA', np.nan)
-        
-        # Ensure cell size columns are numeric
-        cell_size_cols = ['LengthMin', 'LengthMax', 'WidthMin', 'WidthMax', 
-                         'VolumeMin', 'VolumeMax', 'AvgVolume', 'GeoMeanVolume', 'SurfaceArea']
-        for col in cell_size_cols:
-            domain_df[col] = pd.to_numeric(domain_df[col], errors='coerce')
-        
-        # Calculate median values by family
-        family_median_data = {
-            'LengthMin': 'median',
-            'LengthMax': 'median',
-            'WidthMin': 'median',
-            'WidthMax': 'median',
-            'VolumeMin': 'median',
-            'VolumeMax': 'median',
-            'AvgVolume': 'median',
-            'GeoMeanVolume': 'median',
-            'SurfaceArea': 'median',
-            'Cell shape': lambda x: x.mode()[0] if not x.mode().empty else np.nan
-        }
-        
-        # Calculate comprehensive family-level statistics
-        family_stats = domain_df.groupby('Family').agg({
-            'LengthMin': ['median', 'std', 'count'],
-            'LengthMax': ['median', 'std', 'count'],
-            'WidthMin': ['median', 'std', 'count'],
-            'WidthMax': ['median', 'std', 'count'],
-            'VolumeMin': ['median', 'std', 'count'],
-            'VolumeMax': ['median', 'std', 'count'],
-            'AvgVolume': ['median', 'std', 'count'],
-            'GeoMeanVolume': ['median', 'std', 'count'],
-            'SurfaceArea': ['median', 'std', 'count'],
-            'Cell shape': ['nunique', 'count', lambda x: x.mode()[0] if not x.mode().empty else np.nan],
-            'Species': 'count',
-            'Genus': 'nunique'
-        }).reset_index()
-        
-        # Flatten column names
-        family_stats.columns = ['Family'] + [f'{col[0]}_{col[1]}' for col in family_stats.columns[1:]]
-        
-        # Calculate standard errors and confidence intervals
-        volume_cols = ['AvgVolume', 'GeoMeanVolume', 'VolumeMin', 'VolumeMax']
-        for col in volume_cols:
-            if f'{col}_std' in family_stats.columns and f'{col}_count' in family_stats.columns:
-                # Standard Error of the Mean
-                family_stats[f'{col}_sem'] = family_stats[f'{col}_std'] / np.sqrt(family_stats[f'{col}_count'])
-                
-                # Coefficient of Variation
-                family_stats[f'{col}_cv'] = family_stats[f'{col}_std'] / family_stats[f'{col}_median']
-                
-                # 95% Confidence Interval (assuming normal distribution)
-                family_stats[f'{col}_ci_lower'] = family_stats[f'{col}_median'] - (1.96 * family_stats[f'{col}_sem'])
-                family_stats[f'{col}_ci_upper'] = family_stats[f'{col}_median'] + (1.96 * family_stats[f'{col}_sem'])
-        
-        # Calculate shape diversity metrics
-        family_stats['shape_diversity'] = family_stats['Cell shape_nunique'] / family_stats['Cell shape_count']
-        family_stats['shape_consistency'] = 1 - family_stats['shape_diversity']
-        
-        # Coverage statistics
-        family_stats['species_coverage'] = family_stats['Species_count']
-        family_stats['genus_coverage'] = family_stats['Genus_nunique']
-        
-        # Rename columns for clarity
-        family_stats = family_stats.rename(columns={
-            'Cell shape_<lambda_0>': 'Cell shape_dominant',
-            'Cell shape_nunique': 'Cell shape_count_unique',
-            'Cell shape_count': 'Cell shape_total'
-        })
-        
-        # Create the family summary for merging (keeping original structure for compatibility)
-        family_summary_df = family_stats[['Family'] + [col for col in family_stats.columns if 'median' in col]].copy()
-        
-        # Rename columns to indicate they are family-level medians
-        rename_dict = {col: f'{col.replace("_median", "")}_family_median' for col in family_summary_df.columns if col != 'Family'}
-        family_summary_df = family_summary_df.rename(columns=rename_dict)
-        
-        return family_summary_df, family_stats
-        
-    except Exception as e:
-        print(f"Error loading {domain_name} cell size data: {e}")
-        return None, None
+# Process each host species file
+for file_path in glob.glob(os.path.join(input_dir, "*.tsv")):
+    df = pd.read_csv(file_path, sep='\t')
+    # Ensure 'family' column exists
+    if 'family' not in df.columns:
+        continue
 
-# Process both domains
-bacteria_family_summary, bacteria_family_stats = process_domain(bacteria_cell_size_file, bacteria_output_dir, "Bacteria")
-archaea_family_summary, archaea_family_stats = process_domain(archaea_cell_size_file, archaea_output_dir, "Archaea")
+    # Remove contaminants
+    contaminant_keywords = ['Mitochondria', 'Chloroplast']
+    tax_cols = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+    for col in tax_cols:
+        if col in df.columns:
+            df = df[~df[col].astype(str).str.contains('|'.join(contaminant_keywords), case=False, na=False)]
 
-# Find all pooled TSV files
-pattern = os.path.join(pooled_input_dir, "*_pooled_by_study.tsv")
-pooled_files = glob.glob(pattern)
-
-if not pooled_files:
-    print("No pooled files found")
-    exit()
-
-# Process each pooled file for both domains
-bacteria_successful = 0
-bacteria_failed = 0
-archaea_successful = 0
-archaea_failed = 0
-
-for file_path in pooled_files:
-    try:
-        # Load the pooled file
-        df = pd.read_csv(file_path, sep='\t')
-        
-        # Check if required columns exist
-        required_cols = ['family', 'study_accession', 'read_count', 'domain']
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            print(f"Missing required columns in {file_path}: {missing_cols}")
-            bacteria_failed += 1
-            archaea_failed += 1
-            continue
-        
-        # Process Bacteria
-        if bacteria_family_summary is not None:
+    # Flexible family matching
+    def match_family(abundance_family, trait_families):
+        if not isinstance(abundance_family, str) or not abundance_family:
+            return None
+        # Try exact match first
+        if abundance_family in trait_families:
+            return abundance_family
+        for trait_family in trait_families:
+            if not isinstance(trait_family, str) or not trait_family:
+                continue
+            # Delimiters: end of string, underscore, parenthesis, space, digit, or capital letter
+            pattern = r"^" + re.escape(trait_family) + r"($|_|[(\s\dA-Z])"
             try:
-                bacteria_df = df[df['domain'].astype(str) == 'Bacteria'].copy()
-                
-                if not bacteria_df.empty:
-                    # Pool data by family and study_accession (keep study_accession separate)
-                    grouping_cols = ['domain', 'phylum', 'class', 'order', 'family', 'study_accession']
-                    bacteria_family_pooled_df = bacteria_df.groupby(grouping_cols, as_index=False)['read_count'].sum()
-                    
-                    # Merge with cell size data
-                    bacteria_merged_df = pd.merge(
-                        bacteria_family_pooled_df,
-                        bacteria_family_summary,
-                        left_on='family',
-                        right_on='Family',
-                        how='left'
-                    )
-                    
-                    # Add match type column
-                    bacteria_merged_df['MatchType'] = 'Family'
-                    bacteria_merged_df.loc[bacteria_merged_df['GeoMeanVolume_family_median'].isna(), 'MatchType'] = 'No Match'
-                    
-                    # Calculate relative abundance for each family within each study
-                    study_totals = bacteria_merged_df.groupby('study_accession')['read_count'].sum()
-                    bacteria_merged_df['relative_abundance'] = bacteria_merged_df.apply(
-                        lambda row: row['read_count'] / study_totals[row['study_accession']] 
-                        if study_totals[row['study_accession']] > 0 else 0, 
-                        axis=1
-                    )
-                    
-                    # Remove the 'Family' column from output
-                    if 'Family' in bacteria_merged_df.columns:
-                        bacteria_merged_df = bacteria_merged_df.drop(columns=['Family'])
-                    
-                    # Create output filename
-                    base_name = os.path.splitext(os.path.basename(file_path))[0]
-                    bacteria_output_filename = f"{base_name}_bacteria_family_with_cellsize.csv"
-                    bacteria_output_path = os.path.join(bacteria_output_dir, bacteria_output_filename)
-                    
-                    # Save merged data
-                    bacteria_merged_df.to_csv(bacteria_output_path, index=False)
-                    
-                    # Calculate and add summary statistics
-                    num_total_families = bacteria_merged_df['family'].nunique()
-                    num_matched_families = bacteria_merged_df[bacteria_merged_df['GeoMeanVolume_family_median'].notna()]['family'].nunique()
-                    num_unmatched_families = num_total_families - num_matched_families
-                    percent_matched = num_matched_families / num_total_families if num_total_families > 0 else 0
-                    
-                    total_reads = bacteria_merged_df['read_count'].sum()
-                    matched_reads = bacteria_merged_df[bacteria_merged_df['GeoMeanVolume_family_median'].notna()]['read_count'].sum()
-                    unmatched_reads = total_reads - matched_reads
-                    percent_matched_by_reads = matched_reads / total_reads if total_reads > 0 else 0
-                    
-                    with open(bacteria_output_path, 'a') as f:
-                        f.write('\n# Summary Statistics (Bacteria)\n')
-                        f.write(f"# Total unique families: {num_total_families}\n")
-                        f.write(f"# Matched families: {num_matched_families}\n")
-                        f.write(f"# Unmatched families: {num_unmatched_families}\n")
-                        f.write(f"# Percentage matched families: {percent_matched:.2%}\n")
-                        f.write(f"# Total reads: {total_reads}\n")
-                        f.write(f"# Reads in matched families: {matched_reads}\n")
-                        f.write(f"# Reads in unmatched families: {unmatched_reads}\n")
-                        f.write(f"# Percentage matched by read count: {percent_matched_by_reads:.2%}\n")
-                    
-                    bacteria_successful += 1
-                    
-            except Exception as e:
-                print(f"Error processing Bacteria for {file_path}: {e}")
-                bacteria_failed += 1
-        
-        # Process Archaea
-        if archaea_family_summary is not None:
-            try:
-                archaea_df = df[df['domain'].astype(str) == 'Archaea'].copy()
-                
-                if not archaea_df.empty:
-                    # Pool data by family and study_accession (keep study_accession separate)
-                    grouping_cols = ['domain', 'phylum', 'class', 'order', 'family', 'study_accession']
-                    archaea_family_pooled_df = archaea_df.groupby(grouping_cols, as_index=False)['read_count'].sum()
-                    
-                    # Merge with cell size data
-                    archaea_merged_df = pd.merge(
-                        archaea_family_pooled_df,
-                        archaea_family_summary,
-                        left_on='family',
-                        right_on='Family',
-                        how='left'
-                    )
-                    
-                    # Add match type column
-                    archaea_merged_df['MatchType'] = 'Family'
-                    archaea_merged_df.loc[archaea_merged_df['GeoMeanVolume_family_median'].isna(), 'MatchType'] = 'No Match'
-                    
-                    # Calculate relative abundance for each family within each study
-                    study_totals = archaea_merged_df.groupby('study_accession')['read_count'].sum()
-                    archaea_merged_df['relative_abundance'] = archaea_merged_df.apply(
-                        lambda row: row['read_count'] / study_totals[row['study_accession']] 
-                        if study_totals[row['study_accession']] > 0 else 0, 
-                        axis=1
-                    )
-                    
-                    # Remove the 'Family' column from output
-                    if 'Family' in archaea_merged_df.columns:
-                        archaea_merged_df = archaea_merged_df.drop(columns=['Family'])
-                    
-                    # Create output filename
-                    base_name = os.path.splitext(os.path.basename(file_path))[0]
-                    archaea_output_filename = f"{base_name}_archaea_family_with_cellsize.csv"
-                    archaea_output_path = os.path.join(archaea_output_dir, archaea_output_filename)
-                    
-                    # Save merged data
-                    archaea_merged_df.to_csv(archaea_output_path, index=False)
-                    
-                    # Calculate and add summary statistics
-                    num_total_families = archaea_merged_df['family'].nunique()
-                    num_matched_families = archaea_merged_df[archaea_merged_df['GeoMeanVolume_family_median'].notna()]['family'].nunique()
-                    num_unmatched_families = num_total_families - num_matched_families
-                    percent_matched = num_matched_families / num_total_families if num_total_families > 0 else 0
-                    
-                    total_reads = archaea_merged_df['read_count'].sum()
-                    matched_reads = archaea_merged_df[archaea_merged_df['GeoMeanVolume_family_median'].notna()]['read_count'].sum()
-                    unmatched_reads = total_reads - matched_reads
-                    percent_matched_by_reads = matched_reads / total_reads if total_reads > 0 else 0
-                    
-                    with open(archaea_output_path, 'a') as f:
-                        f.write('\n# Summary Statistics (Archaea)\n')
-                        f.write(f"# Total unique families: {num_total_families}\n")
-                        f.write(f"# Matched families: {num_matched_families}\n")
-                        f.write(f"# Unmatched families: {num_unmatched_families}\n")
-                        f.write(f"# Percentage matched families: {percent_matched:.2%}\n")
-                        f.write(f"# Total reads: {total_reads}\n")
-                        f.write(f"# Reads in matched families: {matched_reads}\n")
-                        f.write(f"# Reads in unmatched families: {unmatched_reads}\n")
-                        f.write(f"# Percentage matched by read count: {percent_matched_by_reads:.2%}\n")
-                    
-                    archaea_successful += 1
-                    
-            except Exception as e:
-                print(f"Error processing Archaea for {file_path}: {e}")
-                archaea_failed += 1
-                
-    except Exception as e:
-        print(f"Error processing file {file_path}: {e}")
-        bacteria_failed += 1
-        archaea_failed += 1
+                if re.match(pattern, abundance_family):
+                    return trait_family
+            except re.error:
+                continue  # skip problematic patterns
+        return None
 
-# Save comprehensive family-level statistics for both domains
-if bacteria_family_stats is not None:
-    bacteria_stats_output_path = os.path.join(bacteria_output_dir, "bacteria_family_level_statistics.csv")
-    bacteria_family_stats.to_csv(bacteria_stats_output_path, index=False)
+    trait_families = set(family_stats['Family'])
+    df['family_matched'] = df['family'].apply(lambda fam: match_family(fam, trait_families))
 
-if archaea_family_stats is not None:
-    archaea_stats_output_path = os.path.join(archaea_output_dir, "archaea_family_level_statistics.csv")
-    archaea_family_stats.to_csv(archaea_stats_output_path, index=False)
+    # Identify sample columns: only those starting with 'SRR', 'ERR', or 'DRR'
+    sample_cols = [col for col in df.columns if col.startswith(('SRR', 'ERR', 'DRR'))]
+
+    # Merge with family-level cell size data
+    merged = pd.merge(df, family_stats, left_on='family_matched', right_on='Family', how='left')
+    if 'Family' in merged.columns:
+        merged = merged.drop(columns=['Family'])
+
+    # Convert all sample columns to numeric (coerce errors to NaN)
+    for sample in sample_cols:
+        merged[sample] = pd.to_numeric(merged[sample], errors='coerce')
+
+    # Calculate relative abundance for each sample column
+    for sample in sample_cols:
+        total_reads = merged[sample].sum()
+        if total_reads > 0:
+            merged[f"{sample}_rel_abund"] = merged[sample] / total_reads
+        else:
+            merged[f"{sample}_rel_abund"] = 0
+
+    # Drop 'family_matched' and 'family_matched_rel_abund' columns if they exist
+    cols_to_drop = [col for col in merged.columns if col == "family_matched" or col.startswith("family_matched_rel_abund")]
+    merged = merged.drop(columns=cols_to_drop, errors='ignore')
+
+    # Recompute sample_cols to only include columns that still exist in merged and start with SRR/ERR/DRR
+    sample_cols = [col for col in merged.columns if col.startswith(('SRR', 'ERR', 'DRR'))]
+
+    # Ensure all sample columns are numeric before summing
+    for sample in sample_cols:
+        merged[sample] = pd.to_numeric(merged[sample], errors='coerce')
+
+    # Optionally, filter sample_cols to only numeric columns
+    sample_cols = [col for col in sample_cols if pd.api.types.is_numeric_dtype(merged[col])]
+
+    # Before grouping, save the list of sample columns (read count columns)
+    raw_sample_cols = sample_cols.copy()
+
+    # Identify columns to group by and columns to sum
+    group_cols = ['family']  # or ['family_matched'] if you want to use the matched name
+    cellsize_cols = [col for col in merged.columns if col.endswith('_family_median') or col == 'Cell shape_family_median']
+    # Only keep one row per family, summing sample columns and keeping median cell size columns
+    grouped = merged.groupby(group_cols, as_index=False)[sample_cols + cellsize_cols].agg(
+        {**{col: 'sum' for col in sample_cols}, **{col: 'first' for col in cellsize_cols}}
+    )
+
+    # After grouping, recalculate relative abundance for each sample column (read counts only)
+    for sample in raw_sample_cols:
+        total_reads = grouped[sample].sum()
+        if total_reads > 0:
+            grouped[f"{sample}_rel_abund"] = grouped[sample] / total_reads
+        else:
+            grouped[f"{sample}_rel_abund"] = 0
+
+    # Remove any _rel_abund columns not associated with the original sample columns
+    allowed_rel_abund_cols = {f"{sample}_rel_abund" for sample in raw_sample_cols}
+    rel_abund_cols_to_drop = [col for col in grouped.columns if col.endswith('_rel_abund') and col not in allowed_rel_abund_cols]
+    grouped = grouped.drop(columns=rel_abund_cols_to_drop, errors='ignore')
+
+    # Remove any columns that end with '_rel_abund_rel_abund' before output
+    grouped = grouped.drop(columns=[col for col in grouped.columns if col.endswith('_rel_abund_rel_abund')], errors='ignore')
+
+    # Calculate base-10 logarithm of the median GeoMeanVolume for each row
+    grouped['LogGeoMeanVolume'] = np.log10(grouped['GeoMeanVolume_family_median'])
+
+    # Now, grouped only has one row per family, with summed abundances and family-level medians
+    # You can drop genus/species columns if you want
+
+    # Output merged file
+    base = os.path.splitext(os.path.basename(file_path))[0]
+    output_path = os.path.join(output_dir, f"{base}_family_with_cellsize.csv")
+    grouped.to_csv(output_path, index=False)
+
+    # Calculate summary statistics
+    num_total_families = grouped['family'].nunique()
+    num_matched_families = grouped[grouped['GeoMeanVolume_family_median'].notna()]['family'].nunique()
+    num_unmatched_families = num_total_families - num_matched_families
+    percent_matched = num_matched_families / num_total_families if num_total_families > 0 else 0
+
+    # For total reads, sum across all sample columns
+    total_reads = grouped[sample_cols].sum().sum()
+    matched_reads = grouped[grouped['GeoMeanVolume_family_median'].notna()][sample_cols].sum().sum()
+    unmatched_reads = total_reads - matched_reads
+    percent_matched_by_reads = matched_reads / total_reads if total_reads > 0 else 0
+
+    # Append summary statistics to the output file
+    with open(os.path.join(output_dir, f"{base}_family_with_cellsize.csv"), 'a') as f:
+        f.write('\n# Summary Statistics\n')
+        f.write(f"# Total unique families: {num_total_families}\n")
+        f.write(f"# Matched families: {num_matched_families}\n")
+        f.write(f"# Unmatched families: {num_unmatched_families}\n")
+        f.write(f"# Percentage matched families: {percent_matched:.2%}\n")
+        f.write(f"# Total reads: {total_reads}\n")
+        f.write(f"# Reads in matched families: {matched_reads}\n")
+        f.write(f"# Reads in unmatched families: {unmatched_reads}\n")
+        f.write(f"# Percentage matched by read count: {percent_matched_by_reads:.2%}\n")
