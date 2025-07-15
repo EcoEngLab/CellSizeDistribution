@@ -20,8 +20,6 @@ filtered = combinedData.groupby("Family").filter(lambda x: len(x)>30)
 global_min = filtered["LogGeoMeanVolume"].min()
 global_max = filtered["LogGeoMeanVolume"].max()
 bin_edges = npy.linspace(global_min, global_max, 36)  # 30 bins, for example
-print("Bin edges:", bin_edges)
-print("Bin width:", (global_max - global_min) / 35)
 
 plot = sborn.FacetGrid(filtered, col="Family", col_wrap=3, sharex = True, sharey= False)
 plot.map_dataframe(sborn.histplot, x="LogGeoMeanVolume", stat="count", color="skyblue", bins = bin_edges)
@@ -91,3 +89,6 @@ pyplot.xlim(global_min - x_margin, global_max + x_margin)
 pyplot.tight_layout(rect=[0, 0, 0.85, 0.95])
 pyplot.subplots_adjust(top=0.9)
 pyplot.savefig("FamilyKDE.pdf", format="pdf", bbox_inches='tight')
+
+print("Total number of species with cell volume size:", len(filtered))
+print(filtered["Family"].value_counts())
