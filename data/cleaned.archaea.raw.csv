@@ -1,0 +1,77 @@
+ID,designation_header,strain_number_header,is_type_strain_header,species,domain,Cell shape,Cell length,Cell width
+17820,Kam940,"DSM 19380, JCM 18336, VKM B-2539",1,Fervidicoccus fontis,Archaea,coccus-shaped,1-Mar,1-Mar
+163852,AArc-Sl,"JCM 30664, UNIQEM U999",1,Halalkaliarchaeum desulfuricum,Archaea,pleomorphic-shaped,1.5-2.5,0.5-0.6
+140834,HSR2,"JCM 30661, UNIQEM U935",1,Halanaeroarchaeum sulfurireducens,Archaea,coccus-shaped,1-Feb,0.5-1.5
+133728,EB21,"IBRC-M 10013, KCTC 4048",1,Haloarchaeobius iranensis,Archaea,rod-shaped,3-Jul,1.5-2
+133624,HST01-2R,"BCC 40029, JCM 15759, PCU 313",1,Haloarcula salaria,Archaea,rod-shaped,1.5,0.7
+133623,HST03,"BCC 40030, JCM 15760, PCU 314",1,Haloarcula tradensis,Archaea,rod-shaped,1.75,1
+141038,ZS-54-S2,"CGMCC 1.12562, JCM 30038",1,Halobacterium litoreum,Archaea,rod-shaped,0.8-2.0,0.4-0.5
+134335,HPC1-2,"BCC 24372, JCM 14661, PCU 302",0,Halobacterium salinarum,Archaea,rod-shaped,1-Feb,0.5-1
+133787,MGY-184,"JCM 17821, KCTC 4100, NBRC 109044",1,Halobaculum magnesiiphilum,Archaea,rod-shaped,0.6,0.4
+133385,D90,"CGMCC 1.15501, JCM 31273",1,Halobaculum roseum,Archaea,pleomorphic-shaped,0.5-0.6,0.3-0.4
+166103,ZY21,"CGMCC 1.16343, NBRC 113439",1,Halobellus captivus,Archaea,pleomorphic-shaped,1.0-1.2,0.6-0.8
+133561,RO2-11,"CGMCC 1.7738, JCM 15772",1,Halogranum rubrum,Archaea,ovoid-shaped,1.5,1.5
+5875,AL-5,"DSM 19301, CECT 7257",1,Halomicrobium mukohataei,Archaea,rod-shaped,2.25-2.80,1.80-2.25
+167389,"H22, NRRC 113 231","CGMCC 1.16291, NBRC 113231",1,Halomicrococcus hydrotolerans,Archaea,coccus-shaped,0.8-1.2,0.8-1.2
+166473,F13-13,"CECT 9386, IBRC-M 11204",1,Halonotius aquaticus,Archaea,rod-shaped,1.1-4.4,0.5
+5975,"1.15.5, CSW1.15.5","DSM 18729, CECT 7525, JCM 14355",1,Halonotius pteroides,Archaea,rod-shaped,4,1.1
+133245,MK62-1,"JCM 30442, KCTC 4214",1,Haloparvum alkalitolerans,Archaea,pleomorphic-shaped,0.5-1.2,0.3-0.6
+140835,,"CGMCC 1.14998, JCM 30891, Dys DYS4",1,Haloparvum sedimenti,Archaea,pleomorphic-shaped,0.6-0.8,0.3-0.4
+133906,,"CCTCC AB 2010456, JCM 17506, YIM 94188",1,Halopelagius fulvigenes,Archaea,coccus-shaped,1.2,1.2
+133781,DC30,"IBRC 10041, KCTC 4046",1,Halopenitus persicus,Archaea,rod-shaped,7,1
+5974,"56, 98-618","DSM 13151, JCM 11628",1,Halopiger aswanensis,Archaea,rod-shaped,3.75,0.75
+133244,SR-441,"JCM 19583, KCTC 4248",1,Halopiger thermotolerans,Archaea,rod-shaped,1.0-6.0,0.5-1.0
+158747,SP28,"JCM 31424, KCCM 43210",1,Haloplanus salinarum,Archaea,pleomorphic-shaped,0.6-3.5,0.6-2.3
+5882,SARL4B,"DSM 18392, JCM 14471",1,Halorhabdus tiamatea,Archaea,rod-shaped,4.5,0.75
+166246,F13-25,"CECT 9384, IBRC-M 11176",1,Halorientalis pallida,Archaea,coccus-shaped,1.1-2.8,0.5
+158600,SAH-A6,"KCCM 43215, JCM 31519",1,Halorubrum aethiopicum,Archaea,rod-shaped,1-1.5,0.4-0.6
+5952,31-hong,"DSM 23496, CGMCC 1.2670, JCM 13560, KCTC 4073",1,Halorubrum aidingense,Archaea,rod-shaped,3.6-6.4,0.9-1
+5953,SF3-213,"DSM 19288, CECT 7256, JCM 14715",1,Halorubrum californiense,Archaea,rod-shaped,1-1.5,0.5
+5947,"5'1, 5.1","DSM 17463, CECT 7099",1,Halorubrum ezzemoulense,Archaea,ovoid-shaped,1.5-3,0.6
+141136,CB Cb34,"CECT 8745, IBRC-M 10233",1,Halorubrum halodurans,Archaea,rod-shaped,5.0-10,1.0-4.0
+23052,BG-1,"DSM 19804, JCM 14978, CECT 7322, CGMCC 1.7018, KCTC 4068",1,Halorubrum kocurii,Archaea,rod-shaped,2-May,0.9-1.1
+5951,9-Mar,"DSM 21995, CGMCC 1.5332, JCM 13559, KCTC 4069",1,Halorubrum lipolyticum,Archaea,rod-shaped,1.8-5.5,0.9-1.2
+140642,PJ61,"CGMCC 1.15212, JCM 30955",1,Halorubrum pallidum,Archaea,sphere-shaped,1.0-1.2,0.5-0.8
+140565,Y73,"CGMCC 1.15503, JCM 31271",1,Halorubrum trueperi,Archaea,pleomorphic-shaped,2.9-4.1,0.5-0.7
+163753,ZS-3,"JCM 30239, CGMCC 1.12866",1,Halorussus halophilus,Archaea,pleomorphic-shaped,1.0-6.0,0.8-1.0
+141118,DC8,"IBRC-M 10911, CECT 8793",1,Halomicrobium urmianum,Archaea,pleomorphic-shaped,1.1-1.5,0.3-0.7
+5970,194-10,"DSM 22427, JCM 16110, CECT 7536",1,Halostagnicola kamekurae,Archaea,rod-shaped,2-2.5,0.8-1
+5969,XH-48,"DSM 17691, CECT 7116, CGMCC 1.5338, JCM 13463",1,Halostagnicola larsenii,Archaea,rod-shaped,1-Mar,0.5-1
+163855,LT12,"JCM 30667, CGMCC 1.14941",1,Halostella limicola,Archaea,rod-shaped,1.5-6.0,0.8-1.0
+141067,CBA1114,"JCM 30111, KCTC 4206",1,Halostella salina,Archaea,coccus-shaped,0.7-1.4,0.7-1.4
+134201,AX-7,"CGMCC 1.5333, JCM 13563",1,Natrinema limicola,Archaea,rod-shaped,1.8-3.6,0.6-0.8
+134202,ABH32,"CGMCC 1.5334, JCM 13562",1,Natrinema longum,Archaea,rod-shaped,2.8-11,0.5-0.6
+133710,EB27,"IBRC-M 10015, CGMCC 1.11001",1,Halovenus aranensis,Archaea,rod-shaped,7,1
+134166,EJ-46,"CGMCC 1.4248, CECT 7098, JCM 14624",1,Halovivax asiaticus,Archaea,rod-shaped,4-May,0.4-0.5
+6950,M2,"DSM 19844, VKM B-2371",1,Methanobacterium arcticum,Archaea,rod-shaped,4.5,0.475
+6951,Mic6c05,"DSM 21974, NBRC 105197",1,Methanobacterium ferruginis,Archaea,rod-shaped,3,0.3
+6952,Mic5c12,"DSM 22353, NBRC 105198",1,Methanobacterium petrolearium,Archaea,rod-shaped,3.55,0.3
+6949,MK4,"DSM 19849, VKM B-2440",1,Methanobacterium veterum,Archaea,rod-shaped,5,0.425
+24156,"JH-1, JH1","DSM 25824, JCM 18376, KCTC 4102",1,Methanobrevibacter boviskoreani,Archaea,rod-shaped,1.65,0.6
+17668,MRE50,"DSM 22066, NBRC 105507",1,Methanocella arvoryzae,Archaea,rod-shaped,1.3-2.8,0.4-0.7
+24159,T10,"DSM 21626, JCM 15517",1,Methanoculleus horonobensis,Archaea,ovoid-shaped,1.15,1.15
+132893,HC,"DSM 25996, CGMCC 1.5146, JCM 16311",1,Methanoculleus hydrogenitrophicus,Archaea,coccus-shaped,0.8-2,0.8-2
+17854,TNR,"DSM 23604, NBRC 105659",1,Methanolinea mesophila,Archaea,rod-shaped,4.25,0.3
+17853,NOBi-1,"DSM 16494, JCM 12467, NBRC 102358., NBRC 102358",1,Methanolinea tarda,Archaea,rod-shaped,2,0.85
+132665,MobH,"DSM 21220, NBRC 104160",1,Methanoeremita antiquus,Archaea,rod-shaped,2,0.8
+17857,SMSP,"DSM 22288, NBRC 105244",1,Methanoregula formicica,Archaea,rod-shaped,4,0.5
+131756,8Ac,"DSM 17206, CGMCC 1.5026, NBRC 104789",1,Methanothrix harundinacea,Archaea,rod-shaped,3-May,0.8-1
+7136,Ki8-1,"DSM 22751, JCM 16384, NBRC 104920",1,Methanospirillum lacunae,Archaea,rod-shaped,Nov-25,0.5-0.6
+24171,"ps, Pt1","DSM 26304, VKM B-2808",1,Methanospirillum stamsii,Archaea,rod-shaped,Jul-25,0.4-0.5
+23082,RMAS,"DSM 23052, JCM 16532, NBRC 106236",1,Methanothermobacter tenebrarum,Archaea,rod-shaped,7,0.5
+132586,JW/NM-HA 15,DSM 23470,1,Natrarchaeobaculum aegyptiacum,Archaea,rod-shaped,1-Feb,0.5-0.8
+163851,,"JCM 30663, UNIQEM U932, AArc 1",1,Natrarchaeobaculum sulfurireducens,Archaea,pleomorphic-shaped,1-3.5,0.5-0.6
+134340,HIS40-3,"BCC 24370, JCM 14663, PCU 303",1,Natrinema gari,Archaea,rod-shaped,2-Mar,0.5-0.8
+24083,B23,"DSM 24767, CECT 8068, JCM 17655",1,Natronobacterium texcoconense,Archaea,ovoid-shaped,8.5,0.9
+24068,CG-1,"DSM 25473, CECT 7984, IBRC-M 10656, JCM 17958",1,Natronococcus roseus,Archaea,coccus-shaped,1.5,1.5
+134191,7-Mar,"CGMCC 1.4299, JCM 13488",1,Natronorubrum aibiense,Archaea,rod-shaped,1.4-3.6,0.8-1
+133563,CG-6,"CECT 7487, CGMCC 1.8981, JCM 15982",1,Natronorubrum sediminis,Archaea,rod-shaped,4-Jun,0.8-1
+159828,MY1,"JCM 31640, KCTC 4249",1,Nitrosarchaeum koreense,Archaea,rod-shaped,0.6-1.0,0.3-0.5
+157948,NF5,"DSM 106890, JCM 32270, NCIMB 15114",1,Nitrosopumilus adriaticus,Archaea,rod-shaped,0.59-1.74,0.2-0.25
+141102,,"ATCC TSD-97, NCIMB 15022, SCM 1",1,Nitrosopumilus maritimus,Archaea,rod-shaped,0.5-0.9,0.17-0.22
+158487,D3C,"DSM 106147, JCM 32271, NCIMB 15115",1,Nitrosopumilus piranensis,Archaea,rod-shaped,0.49-2,0.2-0.25
+23332,DY20341,"DSM 24777, JCM 17873",1,Palaeococcus pacificus,Archaea,coccus-shaped,1.15,1.15
+132610,Su06,"DSM 28599, ATCC BAA-2559",1,Pyrodictium delaneyi,Archaea,coccus-shaped,0.8,0.8
+140648,MC-74,"JCM 19597, KCTC 4262",1,Salinarchaeum chitinilyticum,Archaea,rod-shaped,1.2-2.3,0.2-0.3
+141051,,"KCTC 4228T, CGMCC 1.15824, DSM 101065, KCTC 4228, YIM 93745, JCM 17436",1,Saliphagus infecundisoli,Archaea,coccus-shaped,1.0-1.3,1.0-1.3
+133646,Bio-pl-0405IT2,"CSUR P577, JCM 16307, BCC 3069",1,Thermococcus prieurii,Archaea,coccus-shaped,1.15,1.15
