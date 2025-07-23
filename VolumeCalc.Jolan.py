@@ -104,12 +104,12 @@ def get_dominant_shape_by_genus(df, genus_col="Genus", shape_col="Cell shape"):
     
     for genus in df[genus_col].dropna().unique():
         genus_data = df[df[genus_col] == genus]
-        # Count shapes, excluding NaN/empty values
+        # count shapes, excluding NaN/empty values
         shape_counts = genus_data[shape_col].dropna().value_counts()
         if len(shape_counts) > 0:
-            dominant_shapes[genus] = shape_counts.index[0]  # Most common shape
+            dominant_shapes[genus] = shape_counts.index[0]  # most common shape
         else:
-            dominant_shapes[genus] = "rod-shaped"  # Default to rod-shaped
+            dominant_shapes[genus] = "rod-shaped"  # default to rod-shaped
     
     return dominant_shapes
 
@@ -125,10 +125,9 @@ def fill_missing_volumes_with_dominant_shape(df, dominant_shapes_dict, genus_col
     Returns:
         DataFrame with filled volumes
     """
-    # Identify rows with missing volumes
+    # identify rows with missing volumes
     missing_volumes_mask = df["VolumeMin"].isna() | df["VolumeMax"].isna()
     
-    # Create a copy to avoid modifying original
     df_filled = df.copy()
     
     filled_count = 0
@@ -137,21 +136,19 @@ def fill_missing_volumes_with_dominant_shape(df, dominant_shapes_dict, genus_col
         genus = row[genus_col]
         
         if genus in dominant_shapes_dict:
-            # Create a temporary row with the dominant shape
             temp_row = row.copy()
             temp_row["Cell shape"] = dominant_shapes_dict[genus]
             
-            # Calculate volume with dominant shape
             volume_result = volumecalc(temp_row)
             
-            # Update the row if calculation was successful
+            # update the row if calculation was successful
             if not (panda.isna(volume_result["VolumeMin"]) or panda.isna(volume_result["VolumeMax"])):
                 df_filled.loc[idx, "VolumeMin"] = volume_result["VolumeMin"]
                 df_filled.loc[idx, "VolumeMax"] = volume_result["VolumeMax"]
                 df_filled.loc[idx, "SurfaceArea"] = volume_result["SurfaceArea"]
                 filled_count += 1
         else:
-            # If no dominant shape found, use rod-shaped as default
+            # if no dominant shape found, use rod-shaped as default
             temp_row = row.copy()
             temp_row["Cell shape"] = "rod-shaped"
             
@@ -165,19 +162,19 @@ def fill_missing_volumes_with_dominant_shape(df, dominant_shapes_dict, genus_col
     
     return df_filled
 
-# Initial volume calculation
+# initial volume calculation
 bacFile[["VolumeMin", "VolumeMax", "SurfaceArea"]] = bacFile.apply(volumecalc, axis=1, result_type='expand')
 archaeaFile[["VolumeMin", "VolumeMax", "SurfaceArea"]] = archaeaFile.apply(volumecalc, axis=1, result_type='expand')
 
-# Get dominant shapes for each genus
+# get dominant shapes for each genus
 bac_dominant_shapes = get_dominant_shape_by_genus(bacFile)
 arch_dominant_shapes = get_dominant_shape_by_genus(archaeaFile)
 
-# Fill missing volumes using dominant shapes
+# fill missing volumes using dominant shapes
 bacFile = fill_missing_volumes_with_dominant_shape(bacFile, bac_dominant_shapes)
 archaeaFile = fill_missing_volumes_with_dominant_shape(archaeaFile, arch_dominant_shapes)
 
-# Calculate average and geometric mean volumes
+# calculate average and geometric mean volumes
 bacFile["AvgVolume"] = bacFile[["VolumeMin", "VolumeMax"]].mean(axis=1, skipna=True)
 validbac = (bacFile["VolumeMin"] >0) & (bacFile["VolumeMax"]>0)
 bacFile.loc[validbac, "GeoMeanVolume"] = npy.sqrt(bacFile["VolumeMin"] * bacFile["VolumeMax"])
