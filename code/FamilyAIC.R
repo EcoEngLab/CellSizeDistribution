@@ -2,7 +2,6 @@ getwd()
 setwd("C:/Users/catbb/OneDrive/Desktop/bacdive-client")
 library(tidyverse)
 
-# Set working directory to the folder containing your CSVs
 input_dir <- "nopool_family_level_output_bacteria"
 output_dir <- "FamilyAICplots.Bacteria"
 dir.create(output_dir, showWarnings = FALSE)
@@ -23,7 +22,6 @@ extract_species <- function(filename) {
   return(name)
 }
 
-# List all relevant CSV files
 csv_files <- list.files(input_dir, pattern = "_family_with_cellsize\\.csv$", full.names = TRUE)
 
 if (length(csv_files) == 0) {
@@ -203,7 +201,7 @@ for (file in csv_files) {
       message(sprintf("    No data to plot for %s (%s), skipping PDF.", host_species, sid))
     }
 
-    # --- Save summary info ---
+     --- Save summary info ---
     summary_list[[length(summary_list) + 1]] <- data.frame(
       host_species = host_species,
       sample_id = sid,
