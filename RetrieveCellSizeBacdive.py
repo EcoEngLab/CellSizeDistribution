@@ -26,14 +26,12 @@ client = BacdiveClient(bacdive_email, bacdive_password)
 try:
     df_cleaned = pd.read_csv('cleaned.bacteria.raw.csv')
     bacids = df_cleaned['ID'].tolist()
-    print("Successfully loaded BacDive IDs.")
-    print("First 10 BacDive IDs:", bacids[:10])
-    print("Total number of BacDive IDs:", len(bacids))
+    # print("Successfully loaded BacDive IDs.")
+    # print("First 10 BacDive IDs:", bacids[:10])
+    # print("Total number of BacDive IDs:", len(bacids))
 except FileNotFoundError:
-    print("Please make sure the CSV file is in the same directory as the script.")
     bacids = [] 
 except Exception as e:
-    print(f"An error occurred while reading the CSV file: {e}")
     bacids = []
 
 # Helper function to parse cell length/width ranges from strings
