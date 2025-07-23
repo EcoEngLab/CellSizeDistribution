@@ -13,13 +13,12 @@ combinedData = panda.concat([bacData, arcData], ignore_index=True)
 combinedData["LogGeoMeanVolume"] = npy.log10(combinedData["GeoMeanVolume"])
 combinedData = combinedData.dropna(subset=["LogGeoMeanVolume"])
 
-
 filtered = combinedData.groupby("Family").filter(lambda x: len(x)>30)
 
-# Before the loop, define global min/max and bin edges
+# define global min/max and bin edges
 global_min = filtered["LogGeoMeanVolume"].min()
 global_max = filtered["LogGeoMeanVolume"].max()
-bin_edges = npy.linspace(global_min, global_max, 36)  # 30 bins, for example
+bin_edges = npy.linspace(global_min, global_max, 36)  # 35 bins
 
 plot = sborn.FacetGrid(filtered, col="Family", col_wrap=3, sharex = True, sharey= False)
 plot.map_dataframe(sborn.histplot, x="LogGeoMeanVolume", stat="count", color="skyblue", bins = bin_edges)
@@ -28,7 +27,7 @@ for ax, family in zip(plot.axes.flat, plot.col_names):
     subdf = filtered[filtered["Family"] == family]
     data = subdf["LogGeoMeanVolume"].values    
 
-    # Model fitting code commented out below
+    # Model fitting code commented out 
     # hist_vals, _ = npy.histogram(data,bins=bin_edges)
     # kde = gaussian_kde(data, bw_method=0.5)
     # x_vals = npy.linspace(data.min(), data.max(), 200)
@@ -55,7 +54,7 @@ pyplot.tight_layout()
 plot.fig.subplots_adjust(top=0.95)
 plot.savefig("plots_output/FamilyHist.pdf", format="pdf")
 
-pyplot.figure(figsize=(10, 8))  # Taller figure
+pyplot.figure(figsize=(10, 8)) 
 
 colour = sborn.color_palette("husl", len(filtered["Family"].unique()))
 
@@ -81,14 +80,13 @@ pyplot.xlabel("Log₁₀ Volume")
 pyplot.ylabel("Relative Density")
 pyplot.title("Normalized KDE of Log₁₀ Normalised Volume by Family")
 pyplot.grid(True)
-# Make legend smaller and move it outside the plot
 pyplot.legend(fontsize=8, loc='upper left', bbox_to_anchor=(1.02, 1), borderaxespad=0.)
 pyplot.ylim(0, 1.05)
-x_margin = 0.2  # Adjust this value as needed
+x_margin = 0.2 
 pyplot.xlim(global_min - x_margin, global_max + x_margin)
 pyplot.tight_layout(rect=[0, 0, 0.85, 0.95])
 pyplot.subplots_adjust(top=0.9)
 pyplot.savefig("FamilyKDE.pdf", format="pdf", bbox_inches='tight')
 
-print("Total number of species with cell volume size:", len(filtered))
-print(filtered["Family"].value_counts())
+# print("Total number of species with cell volume size:", len(filtered))
+# print(filtered["Family"].value_counts())
