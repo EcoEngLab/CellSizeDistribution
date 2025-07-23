@@ -1,4 +1,6 @@
 """
+No pool!
+
 This script processes pooled amplicon sequencing data and merges it with bacteria and archaea cell size data at the family level.
 
 - Loads all pooled-by-study TSV files from "pooled_output" directory
