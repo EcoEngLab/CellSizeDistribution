@@ -11,7 +11,7 @@ This project provides tools for analyzing microbial cell size distributions by i
 - Perform permutation tests on cell size distributions
 - Handle CSV import/export for all data processing steps
 
-### Requirements
+## Requirements
 
 - Python 3.8+
 - R (for R scripts)
